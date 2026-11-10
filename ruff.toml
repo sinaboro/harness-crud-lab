@@ -1,0 +1,4 @@
+# ruff(코드 검사 도구) 설정 파일
+# DB 데이터 폴더와 단계별 예시 폴더는 검사하지 않는다.
+extend-exclude = ["data", "checkpoints"]
+line-length = 100

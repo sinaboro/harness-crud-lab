@@ -1,0 +1,28 @@
+#!/bin/sh
+# ============================================================
+# pre-commit - "커밋 직전에" git 이 자동으로 실행하는 스크립트 (하네스의 마지막 문)
+#
+# 검증(scripts/verify.sh)이 실패하면 커밋 자체가 취소된다.
+# → "테스트를 통과한 코드만 Git 에 저장된다"는 규칙을 사람의 기억이 아니라 도구가 지킨다.
+#
+# 켜는 법(5교시에 한 번만):  git config core.hooksPath .githooks
+# ============================================================
+
+echo "[pre-commit] 저장하기 전에 검증을 실행합니다..."
+
+if [ -f /.dockerenv ] || [ -n "$HARNESS_LOCAL_VERIFY" ]; then
+    # dev 컨테이너 안에서 커밋하는 경우: 바로 검증한다.
+    # (HARNESS_LOCAL_VERIFY=1 은 PC 에 파이썬을 직접 설치해 쓰는 사람을 위한 스위치다)
+    sh scripts/verify.sh
+else
+    # 윈도우(컨테이너 밖)에서 커밋하는 경우: dev 컨테이너에게 검증을 시킨다.
+    docker compose exec -T dev sh scripts/verify.sh
+fi
+result=$?
+
+if [ $result -ne 0 ]; then
+    echo ""
+    echo "[pre-commit] 검증 실패: 커밋을 취소했습니다."
+    echo "[pre-commit] 위의 오류를 고친 뒤 다시 커밋하세요."
+    exit 1
+fi

@@ -1,0 +1,16 @@
+// ============================================================
+// opencode.jsonc - AI 에이전트(OpenCode) 설정 파일  [출발점: 모델만 정해 둔 상태]
+//
+// 지금은 "어떤 모델을 쓸지"만 적혀 있다. 규칙도 권한 제한도 없다.
+// 5교시에 harness/opencode.jsonc(권한 규칙이 들어 있는 완성본)로 바꾼다.
+// ============================================================
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // 사용할 모델: "openrouter/" 뒤에 OpenRouter 의 모델 이름을 붙인다.
+  // API 키는 여기 적지 않는다. 컨테이너의 환경 변수 OPENROUTER_API_KEY 를 OpenCode 가 알아서 읽는다.
+  "model": "openrouter/anthropic/claude-haiku-5.5",
+
+  // 대화 내용을 인터넷에 공유하는 기능을 끈다.
+  "share": "disabled"
+}

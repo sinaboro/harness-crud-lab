@@ -1,0 +1,76 @@
+# ============================================================
+# docker-compose.yml - 이 과정에서 쓰는 컨테이너 3개의 설계도
+#
+#   db   : PostgreSQL 데이터베이스
+#   app  : FastAPI 서버 (http://localhost:8000)
+#   dev  : 작업실 - pytest, git, AI 에이전트(OpenCode)를 실행하는 곳
+#
+# 켜기  : docker compose up -d --build
+# 끄기  : docker compose down
+# 상태  : docker compose ps
+#
+# ${이름:-기본값} 은 ".env 파일에 그 이름이 있으면 그 값을, 없으면 기본값을 쓴다"는 뜻이다.
+# ============================================================
+
+name: harness-crud-lab
+
+services:
+  # ---------- 데이터베이스 ----------
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-memo}            # DB 계정
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-memo1234} # DB 비밀번호(실습용)
+      POSTGRES_DB: ${POSTGRES_DB:-memo_db}             # 처음 켤 때 자동으로 만들어지는 DB
+      TZ: Asia/Seoul
+    volumes:
+      # [바인드 마운트] C 드라이브의 data\postgres 폴더 ↔ 컨테이너의 데이터 폴더
+      # → 컨테이너를 지워도 메모 데이터는 C 드라이브에 남는다.
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      # DB 가 "접속 받을 준비가 됐는지" 5초마다 확인한다.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------- FastAPI 서버 ----------
+  app:
+    build: .
+    image: harness-crud-lab-dev
+    # --reload: app 폴더의 파일을 고치면 서버가 저절로 다시 켜진다.
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app
+    environment:
+      # 접속 주소의 호스트 이름이 localhost 가 아니라 "db"(위 서비스 이름)인 점에 주목!
+      DATABASE_URL: postgresql://${POSTGRES_USER:-memo}:${POSTGRES_PASSWORD:-memo1234}@db:5432/${POSTGRES_DB:-memo_db}
+      # 윈도우 폴더의 파일 변경은 컨테이너에 "알림"으로 전달되지 않아, 주기적으로 살펴보게 한다.
+      WATCHFILES_FORCE_POLLING: "true"
+      TZ: Asia/Seoul
+    ports:
+      - "8000:8000" # 내 PC 의 8000 번 ↔ 컨테이너의 8000 번
+    volumes:
+      # [바인드 마운트] C 드라이브의 프로젝트 폴더(이 파일이 있는 폴더) ↔ 컨테이너의 /workspace
+      # → 윈도우에서 파일을 고치면 컨테이너 안에서도 바로 바뀐다.
+      - .:/workspace
+    depends_on:
+      db:
+        condition: service_healthy # DB 가 준비된 뒤에 서버를 켠다
+
+  # ---------- 작업실 ----------
+  dev:
+    build: .
+    image: harness-crud-lab-dev
+    command: sleep infinity # 아무 일도 하지 않고 켜져 있다가, 우리가 들어가서 명령을 내린다
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-memo}:${POSTGRES_PASSWORD:-memo1234}@db:5432/${POSTGRES_DB:-memo_db}
+      # 테스트는 진짜 메모를 건드리지 않게 별도의 DB(memo_test)에서 돈다.
+      TEST_DATABASE_URL: postgresql://${POSTGRES_USER:-memo}:${POSTGRES_PASSWORD:-memo1234}@db:5432/memo_test
+      # OpenRouter 키와 모델은 .env 파일에서 읽어 온다. (키를 이 파일에 직접 적지 않는다!)
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-anthropic/claude-haiku-5.5}
+      TZ: Asia/Seoul
+    volumes:
+      - .:/workspace # app 과 같은 폴더를 본다
+    depends_on:
+      db:
+        condition: service_healthy

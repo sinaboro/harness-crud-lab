@@ -1,0 +1,8 @@
+# 이미지를 만들 때(docker compose build) Docker 에게 보내지 않을 것들
+# (소스는 이미지에 넣지 않고 바인드 마운트로 연결하므로, requirements.txt 만 있으면 된다)
+.git
+.env
+data
+backup
+docs
+checkpoints

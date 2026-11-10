@@ -1,0 +1,8 @@
+# 이 프로젝트가 쓰는 파이썬 패키지 목록 (Dockerfile 이 이미지 안에 설치한다)
+# 버전을 고정해 두면, 언제 누가 설치해도 같은 환경이 된다.
+fastapi==0.162.2            # 웹 API 프레임워크
+uvicorn[standard]==0.54.0   # FastAPI 를 실행해 주는 서버
+psycopg[binary]==3.3.8      # 파이썬에서 PostgreSQL 에 접속하는 드라이버
+httpx==0.28.1               # HTTP 요청 도구 (테스트 클라이언트, OpenRouter 호출에 사용)
+pytest==9.2.0               # 자동 테스트 도구
+ruff==0.17.4                # 코드 검사 도구 (오타·안 쓰는 import 등을 잡아 준다)
