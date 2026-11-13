@@ -38,6 +38,8 @@ initdb: error: could not change permissions of directory
 
 **해결.** 예비 설정으로 바꾼다. DB 데이터를 Docker 가 관리하는 저장 공간(이름 있는 볼륨)에 둔다.
 
+> ※ 아래 명령의 `Remove-Item` 은 데이터 폴더를 지운다. 그 안의 메모도 함께 사라진다. 8교시 전이라면 괜찮다. 메모를 지키고 싶다면 이 방법을 쓰기 전에 강사에게 먼저 묻는다.
+
 **[PS]**
 
 ```powershell
@@ -64,7 +66,7 @@ COMPOSE_FILE=docker-compose.yml;docker-compose.volume.yml
 | `docker compose down` 뒤에 남는가 | 남는다 | 남는다 |
 | 완전히 지우려면 | 폴더를 지운다 | `docker compose down -v` |
 
-소스 폴더(`C:\harness-crud-lab` ↔ `/workspace`)의 바인드 마운트는 그대로다. 7교시 8단계의 "컨테이너를 지워도 데이터가 남는다" 실험도 그대로 할 수 있다. `dir data\postgres` 로 폴더를 들여다보는 부분만 건너뛴다.
+소스 폴더(`C:\harness-crud-lab` ↔ `/workspace`)의 바인드 마운트는 그대로다. 7교시의 "컨테이너를 지워도 데이터가 남는다" 확인도 그대로 할 수 있다. 데이터 폴더의 파일을 세는 부분만 건너뛴다.
 
 볼륨이 있는지 보는 명령:
 
@@ -148,7 +150,7 @@ docker compose up -d
 | `ModuleNotFoundError: No module named 'app.…'` | 파일 이름이 다르거나 `app/__init__.py` 가 없다. |
 | `{"detail":"Not Found"}` (404) | 그 주소에 연결된 함수가 없다. 주소 오타, 저장 안 함. |
 | `{"detail":"Method Not Allowed"}` (405) | 주소는 있는데 그 방식의 함수가 없다. |
-| 422 | 요청이 `MemoIn` 의 모양·규칙에 맞지 않는다. 응답의 `loc` 과 `msg` 를 읽는다. |
+| 422 | 요청이 허용된 모양이나 규칙에 맞지 않는다. 응답의 `loc` 과 `msg` 를 읽는다. |
 | 500 | 서버 코드가 오류를 냈다. `docker compose logs app --tail 30` 의 `Traceback` 마지막 줄을 읽는다. |
 | 메모가 자꾸 사라진다 (6교시까지) | 메모리 저장소라서 서버가 다시 켜질 때마다 비워진다. 정상이다. |
 
@@ -159,9 +161,9 @@ docker compose up -d
 | `Name or service not known`, `could not translate host name "db"` | 컨테이너 밖에서 실행했거나, 주소의 호스트를 `localhost` 로 적었다. 컨테이너에서는 `db` 다. |
 | `connection refused` | DB 가 꺼져 있다. `docker compose ps` 로 `db` 가 `healthy` 인지 본다. |
 | `KeyError: 'DATABASE_URL'` | 환경 변수가 없다. dev 컨테이너 안에서 실행한다. |
-| `relation "memos" does not exist` | 테이블을 만드는 코드가 실행되지 않았다. `lifespan` 과 `init_db` 를 본다. |
-| `database "memo_test" does not exist` | `conftest.py` 가 테스트 DB 를 만들지 않는다. 급하면 **[PS]** `docker compose exec db psql -U memo -d memo_db -c "CREATE DATABASE memo_test;"` |
-| `the query has N placeholders but M parameters were passed` | `%s` 개수와 값 개수가 다르다. 값이 하나일 때 `(memo_id,)` 의 쉼표를 본다. |
+| 서버 로그에 "테이블이 없다"는 말 | 서버가 켜질 때 저장 표를 만드는 일이 실행되지 않았다. **[PS]** `docker compose restart app` 후 다시 본다. 계속되면 AI 에게 로그 마지막 줄을 붙여 준다. |
+| 테스트가 "테스트용 데이터베이스를 찾을 수 없다"고 한다 | 테스트 전용 데이터베이스 조건(8교시 지시서 5번)이 빠졌다. AI 에게 그 줄을 가리켜 고치게 한다. 직접 고치지 않는다. |
+| 서버 로그에 값과 자리 개수가 맞지 않는다는 말 | 저장 코드의 실수다. 로그 마지막 줄을 AI 에게 붙여 준다. 직접 고치지 않는다. |
 | 테스트를 돌리면 진짜 메모가 사라진다 | 테스트가 `memo_db` 에서 돈다. `conftest.py` 가 `TEST_DATABASE_URL` 로 바꿔 끼우는지 본다. |
 
 **DB 를 처음 상태로 되돌리려면.** 메모가 모두 사라진다.
@@ -174,7 +176,7 @@ Remove-Item -Recurse -Force .\data\postgres
 docker compose up -d
 ```
 
-메모만 비우려면: **[PS]** `docker compose exec db psql -U memo -d memo_db -c "TRUNCATE TABLE memos RESTART IDENTITY;"`
+메모만 비우고 싶다면 위의 방법으로 데이터 폴더를 지우는 것이 가장 확실하다. 지우기 전에 메모를 다시 만들 수 있는지 먼저 생각한다.
 
 ## 7. 테스트와 검증
 

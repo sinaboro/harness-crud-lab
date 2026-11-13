@@ -124,11 +124,11 @@ docker compose exec dev bash
 |---|---|---|---|---|
 | 1일 | [1](docs/lessons/01_AI_개발_방식과_하네스.md) | AI 개발 방식과 하네스 이해 | AI·하네스·도구 구분 | 다섯 요소, 수업의 흐름 |
 | | [2](docs/lessons/02_개발환경과_OpenRouter.md) | 개발환경 및 OpenRouter 연결 | AI 모델 호출 성공 | 도구·실행 환경(Docker, 바인드 마운트) |
-| | [3](docs/lessons/03_Python_FastAPI_기본.md) | Python·FastAPI 기본 이해 | `/hello` API | AI 를 "설명해 주는 선생님"으로 쓰기 |
+| | [3](docs/lessons/03_서버_확인과_테스트.md) | 서버 확인과 테스트 | `/hello` 주소 확인, 테스트 실행 | 실행하고, 확인하고, 저장하는 흐름 |
 | | [4](docs/lessons/04_CRUD와_HTTP.md) | CRUD 와 HTTP 기초 | GET·POST 테스트 | 규칙 없는 AI 의 한계 관찰 |
 | 2일 | [5](docs/lessons/05_하네스_규칙_작성.md) | 하네스 규칙 작성 | `AGENTS.md` | 규칙·권한·검증을 직접 세운다 |
 | | [6](docs/lessons/06_AI에게_CRUD_지시.md) | AI 에게 CRUD 구현 지시 | 메모 CRUD 초안 | 작업 지시서, 계획 승인, 검토 |
-| | [7](docs/lessons/07_PostgreSQL_기초.md) | PostgreSQL 기초 | DB·테이블 생성 | AI 가 쓸 SQL 을 내가 먼저 읽을 수 있게 |
+| | [7](docs/lessons/07_데이터가_남는_곳.md) | 데이터가 남는 곳 확인 | 데이터 폴더 확인, 컨테이너 재생성 후 유지 | 데이터는 프로그램 밖에 둔다 |
 | | [8](docs/lessons/08_FastAPI와_DB_연결.md) | FastAPI 와 DB 연결 | 메모 저장·조회 | 테스트는 그대로, 구현만 교체 |
 | 3일 | [9](docs/lessons/09_수정_삭제_구현.md) | 수정·삭제 구현 | CRUD 완성 | 테스트 추가만 허용, 삭제 금지 |
 | | [10](docs/lessons/10_HTML_JS_화면_연결.md) | HTML·JS 화면 연결 | 웹에서 CRUD 실행 | 테스트가 못 보는 것을 사람이 확인 |
@@ -236,18 +236,21 @@ harness-crud-lab/
 | **OpenRouter** | 여러 회사의 AI 모델을 하나의 주소·하나의 키로 부르는 서비스 | 키 하나로 모델을 바꿔 가며 쓸 수 있다. 키마다 사용 한도를 걸 수 있어 수업에 안전하다. |
 | **OpenCode** | AI 에이전트 (파일을 읽고 고치고 명령을 실행하는 프로그램) | ① OpenRouter 를 기본 지원한다(환경 변수 `OPENROUTER_API_KEY`). ② 프로젝트의 `AGENTS.md` 를 자동으로 읽는다. ③ 설정 파일의 `permissions` 로 allow / ask / deny 를 정할 수 있다 — 하네스의 "규칙"과 "권한"을 파일로 보여 주기에 알맞다. ④ 터미널 프로그램이라 컨테이너 안에서 실행된다. |
 | **FastAPI** | 웹 API 프레임워크 | 코드가 짧고, `/docs` 화면에서 바로 API 를 눌러 볼 수 있다. |
-| **PostgreSQL + psycopg** | 데이터베이스와 파이썬 드라이버 | ORM 없이 SQL 을 직접 쓴다. 7교시에 배운 SQL 이 코드에 그대로 보여서 AI 가 쓴 코드를 읽을 수 있다. |
+| **PostgreSQL** | 메모를 저장하는 데이터베이스 | 사람이 검토할 수 있도록 저장 코드를 감추는 도구 없이 쓴다. 이 과정에서 SQL 문법은 가르치지 않는다. |
 | **pytest + ruff** | 자동 테스트와 코드 검사 | "다 됐다"를 말이 아니라 명령 한 줄의 결과로 판단한다. |
 | **Git + GitHub** | 변경 기록과 저장 | AI 가 바꾼 내용을 `git diff` 로 읽고, 검증을 통과한 것만 저장한다. |
 
 버전은 `Dockerfile`(OpenCode 2.2.6, Python 3.12), `docker-compose.yml`(PostgreSQL 17), `requirements.txt` 에 고정해 두었다.
-기본 모델은 OpenRouter 의 `anthropic/claude-haiku-5.5` 다. 바꾸는 방법은 2교시에 있다.
+기본 모델은 OpenRouter 의 `anthropic/claude-haiku-5.5` 다. 바꾸는 방법은 [문제 해결 모음](docs/troubleshooting.md)의 "4. OpenRouter 와 OpenCode" 절에 있다.
+
+**이 과정은 Python, FastAPI, SQL 문법을 가르치지 않는다.** 필요한 코드는 완성 예시(`checkpoints/`)와 AI 에이전트가 쓴다. 우리가 하는 일은 코드가 무엇을 하는지 확인하고, 테스트하고, 저장하고, 요구사항과 대조하는 것이다. 문법이 궁금해지면 AI 에게 "초보자에게 쉽게 설명해 줘"라고 물어본다.
+
 
 ---
 
 ## 9. 이 교안의 명령과 결과에 대하여
 
-- API 응답(JSON), `pytest`·`ruff` 결과, SQL 실행 결과는 **실제로 실행해서 나온 것**을 실었다.
+- API 응답(JSON), `pytest`·`ruff` 결과는 **실제로 실행해서 나온 것**을 실었다.
   교시별 완성 예시(`checkpoints/`)의 코드를 실제 PostgreSQL 에 연결해 실행한 결과다.
 - 시각(`created_at` 등)과 실행 시간(`in 0.08s`)은 실행할 때마다 달라진다.
 - **AI 의 답변과 AI 가 만든 코드는 실을 수 없다.** 같은 지시에도 매번 다르게 나오기 때문이다.

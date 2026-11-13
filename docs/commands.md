@@ -6,7 +6,6 @@
 |---|---|---|---|
 | **[PS]** | 윈도우 PowerShell | `PS C:\harness-crud-lab>` | 시작 메뉴 → PowerShell → `cd C:\harness-crud-lab` |
 | **[dev]** | dev 컨테이너의 셸 | `root@…:/workspace#` | **[PS]** `docker compose exec dev bash` |
-| **[psql]** | PostgreSQL 접속 상태 | `memo_db=#` | **[PS]** `docker compose exec db psql -U memo -d memo_db` |
 | **[AI]** | OpenCode 입력 칸 | (OpenCode 화면) | **[dev]** `opencode` |
 
 ---
@@ -30,10 +29,11 @@ PC 를 다시 켠 뒤에는 Docker Desktop 을 먼저 실행하고 "Engine runni
 | 처음 만들기, `Dockerfile`·`requirements.txt` 를 고친 뒤 | `docker compose up -d --build` |
 | `.env` 를 고친 뒤 | `docker compose up -d` (바뀐 컨테이너를 다시 만든다) |
 | 서버만 다시 켜기 | `docker compose restart app` |
+| 데이터베이스만 다시 켜기 | `docker compose restart db` |
 | 서버 로그 마지막 30줄 | `docker compose logs app --tail 30` |
 | 서버 로그 계속 보기 (Ctrl+C 로 멈춤) | `docker compose logs app -f` |
-| DB 로그 | `docker compose logs db --tail 30` |
-| 컨테이너 지우기 (소스와 DB 데이터는 C 드라이브에 남는다) | `docker compose down` |
+| 데이터베이스 로그 | `docker compose logs db --tail 30` |
+| 컨테이너 지우기 (소스와 데이터 폴더는 C 드라이브에 남는다) | `docker compose down` |
 | 바인드 마운트 확인 | `docker inspect harness-crud-lab-dev-1 --format "{{ json .Mounts }}"` |
 
 ## 3. 검증 — [dev]
@@ -46,6 +46,7 @@ PC 를 다시 켠 뒤에는 Docker Desktop 을 먼저 실행하고 "Engine runni
 | 테스트 하나만 | `pytest -q tests/test_memos.py::test_create_memo` |
 | 이름에 낱말이 든 테스트만 | `pytest -q -k update` |
 | 코드 검사만 | `ruff check app tests scripts` |
+| 3교시 완성 예시 가져오기 (앞 교시 결과가 없을 때) | `sh scripts/checkpoint.sh 03` |
 
 ## 4. API 불러 보기 — [dev]
 
@@ -59,6 +60,7 @@ PC 를 다시 켠 뒤에는 Docker Desktop 을 먼저 실행하고 "Engine runni
 | 고치기 | `curl -s -X PUT http://app:8000/memos/1 -H "Content-Type: application/json" -d '{"title": "새 제목", "content": "새 내용"}'` |
 | 지우기 | `curl -s -X DELETE http://app:8000/memos/1` |
 | 상태 코드만 보기 | 위 명령에 `-o /dev/null -w "%{http_code}\n"` 를 붙인다 |
+| 메모 개수 세기 | `curl -s http://app:8000/memos \| grep -o '"id"' \| wc -l` |
 
 브라우저에서 눌러 보기: http://localhost:8000/docs
 
@@ -74,7 +76,7 @@ PC 를 다시 켠 뒤에는 Docker Desktop 을 먼저 실행하고 "Engine runni
 | 저장할 파일 고르기 | `git add -A` (전부) 또는 `git add 파일이름` |
 | 저장 | `git commit -m "9교시: 무엇을 했는지 (요구사항 번호)"` |
 | 기록 보기 | `git log --oneline` |
-| 커밋 하나에서 바뀐 파일 | `git show --stat 커밋번호` |
+| 커밋 하나에서 바뀐 파일 | `git show --stat 커밋번호` (커밋 번호는 `git log --oneline` 맨 앞의 7글자) |
 | 고친 것 버리기 (마지막 커밋 상태로) | `git restore .` |
 | `git add` 한 것 취소 | `git restore --staged 파일이름` |
 | 훅 켜기 (저장소마다 한 번) | `git config core.hooksPath .githooks` |
@@ -116,25 +118,15 @@ PC 를 다시 켠 뒤에는 Docker Desktop 을 먼저 실행하고 "Engine runni
 | 검증 실패 | `sh scripts/verify.sh 가 실패했어. 아래가 출력이야. 원인을 먼저 설명하고, tests/ 는 건드리지 말고 고쳐 줘.` + 출력 붙여넣기 |
 | 범위 위반 | `git diff --stat 에 (파일)이 나와. 지시서 3번에서 고치면 안 된다고 했어. 되돌려 줘.` |
 
-## 8. 데이터베이스 — [PS] 와 [psql]
+## 8. 데이터 확인 — [dev]
+
+메모는 서버 주소로만 확인한다. 데이터베이스에 직접 명령을 내리지 않는다.
 
 | 하려는 일 | 명령 |
 |---|---|
-| 접속 | **[PS]** `docker compose exec db psql -U memo -d memo_db` |
-| 접속하지 않고 SQL 한 줄 | **[PS]** `docker compose exec db psql -U memo -d memo_db -c "SELECT id, title FROM memos ORDER BY id;"` |
-| 데이터베이스 목록 | **[psql]** `\l` |
-| 다른 데이터베이스로 | **[psql]** `\c practice` |
-| 테이블 목록 | **[psql]** `\dt` |
-| 테이블 구조 | **[psql]** `\d memos` |
-| 나가기 | **[psql]** `\q` |
-
-| SQL | 하는 일 |
-|---|---|
-| `SELECT * FROM memos ORDER BY id DESC;` | 목록 (최신이 위) |
-| `SELECT * FROM memos WHERE id = 1;` | 한 건 |
-| `INSERT INTO memos (title, content) VALUES ('제목', '내용');` | 만들기 |
-| `UPDATE memos SET title = '새 제목' WHERE id = 1;` | 고치기 — **WHERE 필수** |
-| `DELETE FROM memos WHERE id = 1;` | 지우기 — **WHERE 필수** |
+| 메모 목록 보기 | `curl -s http://app:8000/memos` |
+| 데이터베이스가 켜져 있나 | **[PS]** `docker compose ps` 에서 `db` 가 `(healthy)` 인지 본다 |
+| 데이터 폴더의 파일 수 세기 | **[PS]** `(Get-ChildItem C:\harness-crud-lab\data\postgres -Recurse -File).Count` |
 
 ## 9. 막혔을 때 — [dev]
 

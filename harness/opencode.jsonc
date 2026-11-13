@@ -23,6 +23,7 @@
     { "action": "shell", "resource": "*", "effect": "ask" },
 
     // 검증에 필요한 명령과, 읽기만 하는 명령은 묻지 않고 허용한다.
+    { "action": "shell", "resource": "sh scripts/verify.sh", "effect": "allow" },
     { "action": "shell", "resource": "sh scripts/verify.sh *", "effect": "allow" },
     { "action": "shell", "resource": "pytest *", "effect": "allow" },
     { "action": "shell", "resource": "ruff check *", "effect": "allow" },
@@ -44,12 +45,13 @@
     // (시험 보는 사람이 채점 기준을 고칠 수 없는 것과 같다)
     { "action": "edit", "resource": "*AGENTS.md", "effect": "deny" },
     { "action": "edit", "resource": "*opencode.jsonc", "effect": "deny" },
-    { "action": "edit", "resource": "*/harness/*", "effect": "deny" },
-    { "action": "edit", "resource": "*/scripts/verify.sh", "effect": "deny" },
-    { "action": "edit", "resource": "*/.githooks/*", "effect": "deny" },
-    { "action": "edit", "resource": "*/checkpoints/*", "effect": "deny" },
+    // (주의) 경로 앞에 * 를 붙여, "harness/…" 처럼 상대 경로로 적어도 걸리게 한다.
+    { "action": "edit", "resource": "*harness/*", "effect": "deny" },
+    { "action": "edit", "resource": "*scripts/verify.sh", "effect": "deny" },
+    { "action": "edit", "resource": "*.githooks/*", "effect": "deny" },
+    { "action": "edit", "resource": "*checkpoints/*", "effect": "deny" },
     // checkpoints 폴더(교시별 완성 예시)는 읽지도 못한다. 답을 베끼지 않고 요구사항을 보고 만들게 한다.
-    { "action": "read", "resource": "*/checkpoints/*", "effect": "deny" },
+    { "action": "read", "resource": "*checkpoints/*", "effect": "deny" },
     // 실행 환경 파일은 고치기 전에 사람에게 물어본다.
     { "action": "edit", "resource": "*Dockerfile", "effect": "ask" },
     { "action": "edit", "resource": "*docker-compose*.yml", "effect": "ask" },
